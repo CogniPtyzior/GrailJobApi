@@ -71,4 +71,11 @@ public sealed class SearchSession
         LastExecutedAtUtc = nowUtc;
         UpdatedAtUtc = nowUtc;
     }
+
+    public void Reset(DateTime nowUtc)
+    {
+        Status = SearchSessionStatus.Idle;
+        LastExecutedAtUtc = null;
+        UpdatedAtUtc = nowUtc;
+    }
 }

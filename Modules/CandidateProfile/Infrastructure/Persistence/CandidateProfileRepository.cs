@@ -12,6 +12,11 @@ public sealed class CandidateProfileRepository(CandidateProfileDbContext dbConte
     public Task AddAsync(CandidateProfileEntity profile, CancellationToken cancellationToken = default)
         => dbContext.CandidateProfiles.AddAsync(profile, cancellationToken).AsTask();
 
+    public Task DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        => dbContext.CandidateProfiles
+            .Where(x => x.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => dbContext.SaveChangesAsync(cancellationToken);
 }

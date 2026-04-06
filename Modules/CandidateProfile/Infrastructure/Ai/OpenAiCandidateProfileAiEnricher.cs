@@ -1,5 +1,7 @@
 using GrailJobApi.Modules.CandidateProfile.Application;
+using GrailJobApi.Modules.CandidateProfile.Domain;
 using GrailJobApi.Shared.Ai;
+using System.Text.Json.Serialization;
 
 namespace GrailJobApi.Modules.CandidateProfile.Infrastructure.Ai;
 
@@ -24,20 +26,41 @@ public sealed class OpenAiCandidateProfileAiEnricher(OpenAiStructuredChatClient 
             ["required"] = new[] { "title", "summary" }
         };
 
-        const string systemPrompt = "You are a precise CV summarizer. Return only valid JSON matching the provided schema. Be concise and deterministic.";
-        var userPrompt = $@"CV text:
+        const string systemPrompt =
+            "Vous êtes un moteur déterministe de synthèse de CV. " +
+            "Retournez uniquement un JSON valide conforme au schéma fourni. " +
+            "Rédigez impérativement tous les champs textuels en français. " +
+            "Le titre doit être court, professionnel et en français. " +
+            "Le résumé doit être concis, factuel, fluide et en français. " +
+            "N'inventez aucune information absente du CV.";
 
-{extractedText}";
+        var userPrompt = $"""
+CV à analyser :
 
-        var response = await client.GetStructuredResponseAsync<CandidateProfileInsightContract>("candidate_profile_insight", schema, systemPrompt, userPrompt, cancellationToken);
+{extractedText}
+
+Consignes :
+- produire `title` en français
+- produire `summary` en français
+- ne pas recopier le CV mot à mot
+- ne retourner que le JSON demandé
+""";
+
+        var response = await client.GetStructuredResponseAsync<CandidateProfileInsightContract>(
+            "candidate_profile_insight",
+            schema,
+            systemPrompt,
+            userPrompt,
+            cancellationToken);
+
         return new AiProfileInsight(response.Title.Trim(), response.Summary.Trim());
     }
 
     private static AiProfileInsight BuildMockInsight(string extractedText)
     {
         var title = extractedText.Contains("React", StringComparison.OrdinalIgnoreCase)
-            ? "Full stack .NET / React profile"
-            : "Software engineering profile";
+            ? "Profil full stack .NET / React"
+            : "Profil ingénierie logicielle";
 
         var summary = extractedText.Length > 220
             ? extractedText[..220].Trim() + "..."
@@ -46,5 +69,7 @@ public sealed class OpenAiCandidateProfileAiEnricher(OpenAiStructuredChatClient 
         return new AiProfileInsight(title, summary);
     }
 
-    private sealed record CandidateProfileInsightContract([property: JsonPropertyName("title")] string Title, [property: JsonPropertyName("summary")] string Summary);
+    private sealed record CandidateProfileInsightContract(
+        [property: JsonPropertyName("title")] string Title,
+        [property: JsonPropertyName("summary")] string Summary);
 }

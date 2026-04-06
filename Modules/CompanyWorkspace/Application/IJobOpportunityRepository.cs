@@ -6,5 +6,6 @@ public interface IJobOpportunityRepository
     Task<JobOpportunity?> GetByUserIdAndCompanyNameAsync(Guid userId, string companyName, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<JobOpportunity>> ListByStatusAsync(Guid userId, JobOpportunityStatus status, CancellationToken cancellationToken = default);
     Task AddAsync(JobOpportunity jobOpportunity, CancellationToken cancellationToken = default);
+    Task DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

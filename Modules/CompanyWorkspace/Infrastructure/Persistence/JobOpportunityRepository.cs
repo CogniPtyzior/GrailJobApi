@@ -23,6 +23,11 @@ public sealed class JobOpportunityRepository(CompanyWorkspaceDbContext dbContext
     public Task AddAsync(JobOpportunity jobOpportunity, CancellationToken cancellationToken = default)
         => dbContext.JobOpportunities.AddAsync(jobOpportunity, cancellationToken).AsTask();
 
+    public Task DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        => dbContext.JobOpportunities
+            .Where(x => x.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => dbContext.SaveChangesAsync(cancellationToken);
 }

@@ -24,6 +24,21 @@ public sealed class SearchService(
         return new SearchCriteriaResponse(criteria);
     }
 
+    public async Task ResetAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var session = await searchSessionRepository.GetByUserIdAsync(userId, includeCriteria: true, includeResults: true, cancellationToken: cancellationToken);
+        if (session is not null)
+        {
+            await searchSessionRepository.DeleteCriteriaBySessionIdAsync(session.Id, cancellationToken);
+            await searchSessionRepository.DeleteResultsBySessionIdAsync(session.Id, cancellationToken);
+            session.Reset(DateTime.UtcNow);
+            await searchSessionRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        await jobOpportunityRepository.DeleteByUserIdAsync(userId, cancellationToken);
+        await candidateProfileRepository.DeleteByUserIdAsync(userId, cancellationToken);
+    }
+
     public async Task<SearchCriteriaResponse> SaveCriteriaAsync(Guid userId, IReadOnlyList<string> criteria, CancellationToken cancellationToken = default)
     {
         criteria ??= Array.Empty<string>();

@@ -46,5 +46,16 @@ public sealed class SearchesController(SearchService searchService) : Controller
     public async Task<ActionResult<SearchResponse>> GetCurrent(CancellationToken cancellationToken)
         => Ok(await searchService.GetCurrentSearchAsync(GetUserId(), cancellationToken));
 
+    /// <summary>Resets the current search session and purges the candidate profile.</summary>
+    [HttpPost("reset")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Reset(CancellationToken cancellationToken)
+    {
+        await searchService.ResetAsync(GetUserId(), cancellationToken);
+        return NoContent();
+    }
+
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
+
+
