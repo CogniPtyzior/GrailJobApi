@@ -1,0 +1,9 @@
+global using System.ComponentModel.DataAnnotations;
+global using System.Security.Claims;
+global using System.Text;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using GrailJobApi.Modules.CandidateProfile.Domain;
+global using GrailJobApi.Modules.CompanyWorkspace.Domain;
+global using GrailJobApi.Modules.JobSearch.Domain;
+global using GrailJobApi.Modules.UserAccess.Domain;
