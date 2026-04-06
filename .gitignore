@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Db/password.secret
+/Migration_commands.txt
+/Ai/key.secret
+/appsettings.Development.local.json
