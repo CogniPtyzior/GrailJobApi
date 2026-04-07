@@ -33,7 +33,41 @@ public sealed class LogoutResponseExample : IExamplesProvider<LogoutResponse>
 
 public sealed class CvProfileResponseExample : IExamplesProvider<CvProfileResponse>
 {
-    public CvProfileResponse GetExamples() => new(true, DateTime.Parse("2026-04-03T10:15:00Z"), "Full stack .NET / React profile", "Experienced developer with strong .NET, React and product-oriented delivery background.", "cv_john_doe.pdf");
+    public CvProfileResponse GetExamples() => new(
+        true,
+        DateTime.Parse("2026-04-03T10:15:00Z"),
+        "Full stack .NET / React profile",
+        "Experienced developer with strong .NET, React and product-oriented delivery background.",
+        "cv_john_doe.pdf",
+        ["Développeur full stack", "Ingénieur logiciel"],
+        [".NET Full Stack Developer", "Software Engineer"],
+        [".NET", "C#", "API REST"],
+        ["React", "TypeScript", "PostgreSQL"],
+        [".NET", "C#"],
+        ["Azure", "CI/CD"],
+        ["Développement logiciel", "Applications métiers"],
+        ["SaaS", "Services numériques"],
+        ["Éditeur", "ESN", "Scale-up"],
+        [
+            "Expérience confirmée sur le développement d'applications web et backend.",
+            "Capacité à intervenir sur des environnements cloud et distribués."
+        ],
+        ["Microservices", "API", "Architecture distribuée"],
+        ["CI/CD", "Automatisation", "Observabilité"],
+        ["Français", "Anglais"],
+        ["Hybrid", "Remote"],
+        ["Paris", "Lyon"],
+        ["France"],
+        "Senior",
+        "10+ ans",
+        "Lead technique",
+        ["Azure Fundamentals"],
+        ["CDI"],
+        [".NET", "C#", "Azure", "React", "API"],
+        ["rigoureux", "autonome", "pragmatique"],
+        ["communication", "travail en équipe", "mentorat"],
+        ["Formation supérieure en informatique"],
+        ["veille technologique", "open source"]);
 }
 
 public sealed class SearchCriteriaRequestExample : IExamplesProvider<SearchCriteriaRequest>
