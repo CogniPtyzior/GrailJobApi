@@ -3,6 +3,7 @@ using System;
 using GrailJobApi.Modules.UserAccess.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GrailJobApi.Modules.UserAccess.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(UserAccessDbContext))]
-    partial class UserAccessDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407182536_AddSiteAccessRequests")]
+    partial class AddSiteAccessRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

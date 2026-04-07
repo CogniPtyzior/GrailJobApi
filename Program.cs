@@ -8,6 +8,7 @@ using GrailJobApi.Modules.JobSearch.Application;
 using GrailJobApi.Modules.JobSearch.Infrastructure.Ai;
 using GrailJobApi.Modules.JobSearch.Infrastructure.Persistence;
 using GrailJobApi.Modules.UserAccess.Application;
+using GrailJobApi.Modules.UserAccess.Infrastructure.Email;
 using GrailJobApi.Modules.UserAccess.Infrastructure.Persistence;
 using GrailJobApi.Shared.Ai;
 using GrailJobApi.Shared.Configuration;
@@ -35,6 +36,7 @@ builder.Services.Configure<SearchOptions>(builder.Configuration.GetSection(Searc
 builder.Services.Configure<CompanyWorkspaceOptions>(builder.Configuration.GetSection(CompanyWorkspaceOptions.SectionName));
 builder.Services.Configure<SeedOptions>(builder.Configuration.GetSection(SeedOptions.SectionName));
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.SectionName));
+builder.Services.Configure<SiteAccessEmailOptions>(builder.Configuration.GetSection(SiteAccessEmailOptions.SectionName));
 
 var connectionString = DatabaseConnectionStringBuilder.Build(builder.Configuration);
 
@@ -116,10 +118,13 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CandidateProfileService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<CompanyWorkspaceService>();
+builder.Services.AddScoped<SiteAccessRequestService>();
 
 builder.Services.AddScoped<ICandidateProfileRepository, CandidateProfileRepository>();
 builder.Services.AddScoped<ISearchSessionRepository, SearchSessionRepository>();
 builder.Services.AddScoped<IJobOpportunityRepository, JobOpportunityRepository>();
+builder.Services.AddScoped<ISiteAccessRequestRepository, SiteAccessRequestRepository>();
+builder.Services.AddScoped<ISiteAccessRequestEmailSender, MailKitSiteAccessRequestEmailSender>();
 builder.Services.AddScoped<IPdfTextExtractor, PdfPigTextExtractor>();
 builder.Services.AddScoped<ICandidateProfileAiEnricher, OpenAiCandidateProfileAiEnricher>();
 builder.Services.AddScoped<IJobSearchAiClient, OpenAiJobSearchAiClient>();

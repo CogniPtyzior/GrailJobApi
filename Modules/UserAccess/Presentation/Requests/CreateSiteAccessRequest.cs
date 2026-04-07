@@ -20,6 +20,6 @@ public sealed class CreateSiteAccessRequest
     public string ContactEmail { get; init; } = string.Empty;
 
     [Required]
-    [StringLength(4000)]
+    [StringLength(8000)]
     public string JobOffer { get; init; } = string.Empty;
 }
