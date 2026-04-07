@@ -81,7 +81,7 @@ public sealed class SearchService(
             .ToArray();
 
         var aiResults = await jobSearchAiClient.ExecuteAsync(
-            candidateProfile.ExtractedText,
+            candidateProfile.AiProfileInsight,
             normalized,
             filteredCompanyNames,
             cancellationToken);

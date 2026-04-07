@@ -1,3 +1,4 @@
+using GrailJobApi.Modules.CandidateProfile.Domain;
 using GrailJobApi.Modules.JobSearch.Application;
 using GrailJobApi.Modules.JobSearch.Domain;
 using GrailJobApi.Shared.Ai;
@@ -9,7 +10,7 @@ namespace GrailJobApi.Modules.JobSearch.Infrastructure.Ai;
 public sealed class OpenAiJobSearchAiClient(OpenAiStructuredChatClient client) : IJobSearchAiClient
 {
     public async Task<IReadOnlyList<JobSearchAiResult>> ExecuteAsync(
-        string candidateProfileText,
+        AiProfileInsight candidateProfile,
         IReadOnlyList<string> criteria,
         IReadOnlyList<string> filteredCompanyNames,
         CancellationToken cancellationToken = default)
@@ -54,18 +55,19 @@ public sealed class OpenAiJobSearchAiClient(OpenAiStructuredChatClient client) :
 
         var systemPrompt =
             "Vous êtes un moteur déterministe de recherche d'offres d'emploi. " +
-            "Utilisez le profil candidat, les critères et la liste filtered_company_names. " +
+            "Utilisez le profil candidat structuré, les critères et la liste filtered_company_names. " +
             "N'incluez jamais une entreprise présente dans filtered_company_names. " +
+            "Appuyez-vous d'abord sur les champs structurés suivants : rôles cibles, intitulés visés, compétences cœur, compétences complémentaires, compétences incontournables, domaines, secteurs, types d'entreprises, expériences marquantes, architectures, pratiques de delivery, langues, modes de travail, localisations, mobilité, séniorité, expérience, management, certifications, préférences contractuelles, mots-clés, soft skills, traits de personnalité, formation et hobbies. " +
             "Retournez uniquement du JSON conforme au schéma. " +
             "Tous les champs textuels retournés doivent être rédigés en français fluide et professionnel. " +
             "Traduisez en français les intitulés et descriptions si la source est en anglais. " +
             "Conservez les noms propres, noms d'entreprise, URLs et sigles techniques si nécessaire. " +
-            "N'écrivez jamais de commentaire méta comme 'Excluded by filtered_company_names'." +
+            "N'écrivez jamais de commentaire méta comme 'Excluded by filtered_company_names'. " +
             "Ne proposer que des entreprises qui ont une offre d'emploi en cours ou une page recrutements pertinente.";
 
         var userPayload = JsonSerializer.Serialize(new
         {
-            cv_text = candidateProfileText,
+            candidate_profile = CreateCandidateProfilePayload(candidateProfile),
             criteria,
             filtered_company_names = filteredCompanyNames,
             instructions = new
@@ -114,6 +116,38 @@ public sealed class OpenAiJobSearchAiClient(OpenAiStructuredChatClient client) :
                 nowUtc))
             .ToArray();
     }
+
+    private static object CreateCandidateProfilePayload(AiProfileInsight profile) => new
+    {
+        title = profile.Title,
+        summary = profile.Summary,
+        target_roles = profile.TargetRoles,
+        preferred_job_titles = profile.PreferredJobTitles,
+        core_skills = profile.CoreSkills,
+        secondary_skills = profile.SecondarySkills,
+        must_have_skills = profile.MustHaveSkills,
+        nice_to_have_skills = profile.NiceToHaveSkills,
+        domains = profile.Domains,
+        industries = profile.Industries,
+        company_types = profile.CompanyTypes,
+        experience_highlights = profile.ExperienceHighlights,
+        architecture_focus = profile.ArchitectureFocus,
+        delivery_practices = profile.DeliveryPractices,
+        languages_spoken = profile.LanguagesSpoken,
+        work_modes = profile.WorkModes,
+        locations = profile.Locations,
+        mobility_area = profile.MobilityArea,
+        seniority = profile.Seniority,
+        experience_level_years = profile.ExperienceLevelYears,
+        management_scope = profile.ManagementScope,
+        certifications = profile.Certifications,
+        contract_preferences = profile.ContractPreferences,
+        search_keywords = profile.SearchKeywords,
+        personality_traits = profile.PersonalityTraits,
+        soft_skills = profile.SoftSkills,
+        education_details = profile.EducationDetails,
+        hobbies = profile.Hobbies
+    };
 
     private static IReadOnlyList<JobSearchAiResult> BuildMockResults(IReadOnlyList<string> criteria, IReadOnlyList<string> filteredCompanyNames)
     {
