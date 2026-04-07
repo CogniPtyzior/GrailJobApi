@@ -13,7 +13,6 @@ namespace GrailJobApi.Modules.CandidateProfile.Presentation.Controllers;
 [Produces("application/json", "application/problem+json")]
 public sealed class CandidateProfileController(CandidateProfileService service) : ControllerBase
 {
-    /// <summary>Returns the current parsed CV summary for the authenticated user.</summary>
     [HttpGet("cv")]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(CvProfileResponseExample))]
     [ProducesResponseType<CvProfileResponse>(StatusCodes.Status200OK)]
@@ -23,12 +22,12 @@ public sealed class CandidateProfileController(CandidateProfileService service) 
         return Ok(await service.GetAsync(userId, cancellationToken));
     }
 
-    /// <summary>Uploads a PDF CV, extracts its text, enriches it with AI and replaces the current profile.</summary>
     [HttpPost("cv")]
     [Consumes("multipart/form-data")]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(CvProfileResponseExample))]
     [ProducesResponseType<CvProfileResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<CvProfileResponse>> UploadCv([FromForm] UploadCandidateProfileRequest request, CancellationToken cancellationToken)
     {
         if (request.File is null)
@@ -63,16 +62,29 @@ public sealed class CandidateProfileController(CandidateProfileService service) 
             return ValidationProblem(ModelState);
         }
 
-        var response = await service.UploadAsync(GetUserId(), request.File, cancellationToken);
-        return Ok(response);
+        try
+        {
+            var response = await service.UploadAsync(GetUserId(), request.File, cancellationToken);
+            return Ok(response);
+        }
+        catch (InvalidCandidateProfileDocumentException exception)
+        {
+            ModelState.AddModelError(nameof(request.File), exception.Message);
+            return ValidationProblem(ModelState);
+        }
+        catch (CandidateProfileEnrichmentUnavailableException exception)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Analyse du CV temporairement indisponible",
+                detail: exception.Message);
+        }
     }
 
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
 
-/// <summary>Multipart upload payload.</summary>
 public sealed class UploadCandidateProfileRequest
 {
-    /// <summary>The PDF CV file.</summary>
     public IFormFile? File { get; init; }
 }

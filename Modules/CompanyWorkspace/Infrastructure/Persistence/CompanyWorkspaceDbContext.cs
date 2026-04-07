@@ -6,7 +6,6 @@ namespace GrailJobApi.Modules.CompanyWorkspace.Infrastructure.Persistence;
 public sealed class CompanyWorkspaceDbContext(DbContextOptions<CompanyWorkspaceDbContext> options) : DbContext(options)
 {
     public DbSet<JobOpportunity> JobOpportunities => Set<JobOpportunity>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(DbSchemas.CompanyWorkspace);
@@ -24,7 +23,7 @@ public sealed class CompanyWorkspaceDbContext(DbContextOptions<CompanyWorkspaceD
             entity.Property(x => x.WorkMode).HasConversion<int>();
             entity.Property(x => x.Status).HasConversion<int>();
             entity.HasIndex(x => new { x.UserId, x.Status, x.UpdatedAtUtc });
-            entity.HasIndex(x => new { x.UserId, x.CompanyName });
+            entity.HasIndex(x => new { x.UserId, x.CompanyName }).IsUnique();
         });
     }
 }

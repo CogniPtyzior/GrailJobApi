@@ -26,15 +26,31 @@ public sealed class CandidateProfileService(
         await file.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
 
-        var extractedTextRaw = await pdfTextExtractor.ExtractTextAsync(memoryStream, cancellationToken);
-        var extractedText = PostgresTextSanitizer.Sanitize(extractedTextRaw);
+        string extractedText;
+        try
+        {
+            var extractedTextRaw = await pdfTextExtractor.ExtractTextAsync(memoryStream, cancellationToken);
+            extractedText = PostgresTextSanitizer.Sanitize(extractedTextRaw);
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidCandidateProfileDocumentException(
+                "Le fichier PDF semble corrompu ou son contenu ne peut pas être lu.");
+        }
 
         if (string.IsNullOrWhiteSpace(extractedText))
         {
-            throw new InvalidOperationException("The uploaded PDF did not contain any extractable text.");
+            throw new InvalidCandidateProfileDocumentException(
+                "Le fichier PDF importé ne contient pas de texte exploitable.");
         }
 
-        var aiProfileInsight = await aiEnricher.EnrichAsync(extractedText, cancellationToken);
+        if (extractedText.Length < 120)
+        {
+            throw new InvalidCandidateProfileDocumentException(
+                "Le contenu du CV est trop incomplet pour générer un titre et une description fiables.");
+        }
+
+        var aiProfileInsight = await EnrichProfileAsync(extractedText, cancellationToken);
         var existing = await repository.GetByUserIdAsync(userId, cancellationToken);
         var nowUtc = DateTime.UtcNow;
 
@@ -71,4 +87,22 @@ public sealed class CandidateProfileService(
     public IReadOnlyList<string> GetAllowedExtensions() => _options.AllowedExtensions;
     public IReadOnlyList<string> GetAllowedContentTypes() => _options.AllowedContentTypes;
     public long GetMaxFileSizeBytes() => _options.MaxFileSizeBytes;
+
+    private async Task<AiProfileInsight> EnrichProfileAsync(string extractedText, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await aiEnricher.EnrichAsync(extractedText, cancellationToken);
+        }
+        catch (InvalidCandidateProfileDocumentException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new CandidateProfileEnrichmentUnavailableException(
+                "Le CV a bien été reçu, mais le service d'analyse est temporairement indisponible. Merci de réessayer dans quelques instants.",
+                exception);
+        }
+    }
 }
