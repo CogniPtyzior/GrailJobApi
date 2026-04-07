@@ -21,31 +21,21 @@ public sealed class OpenAiStructuredChatClient(HttpClient httpClient, IOptions<O
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.BaseUrl.TrimEnd('/')}/chat/completions");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _options.ApiKey);
 
-        var payload = new
-        {
-            model = _options.ResolveModelId(),
-            temperature = _options.Temperature,
-            max_completion_tokens = _options.MaxOutputTokens,
-            messages = new object[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = userPrompt }
-            },
-            response_format = new
-            {
-                type = "json_schema",
-                json_schema = new
-                {
-                    name = schemaName,
-                    strict = true,
-                    schema
-                }
-            }
-        };
+        var payload = BuildPayload(schemaName, schema, systemPrompt, userPrompt);
 
-        request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonDefaults.SerializerOptions), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(payload, JsonDefaults.SerializerOptions),
+            Encoding.UTF8,
+            "application/json");
+
         using var response = await httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException(
+                $"OpenAI request failed with status {(int)response.StatusCode} ({response.StatusCode}). Body: {errorBody}");
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
@@ -68,5 +58,70 @@ public sealed class OpenAiStructuredChatClient(HttpClient httpClient, IOptions<O
         }
 
         return result;
+    }
+
+    private object BuildPayload(string schemaName, object schema, string systemPrompt, string userPrompt)
+    {
+        return _options.Model switch
+        {
+            OpenAiModelKind.Gpt54 => BuildJsonSchemaPayload(schemaName, schema, systemPrompt, userPrompt),
+            OpenAiModelKind.Gpt5Mini => BuildJsonObjectPayload(schema, systemPrompt, userPrompt),
+            OpenAiModelKind.O4Mini => BuildJsonObjectPayload(schema, systemPrompt, userPrompt),
+            _ => BuildJsonSchemaPayload(schemaName, schema, systemPrompt, userPrompt)
+        };
+    }
+
+    private object BuildJsonSchemaPayload(string schemaName, object schema, string systemPrompt, string userPrompt) =>
+        new
+        {
+            model = _options.ResolveModelId(),
+            temperature = _options.Temperature,
+            max_completion_tokens = _options.MaxOutputTokens,
+            messages = new object[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = userPrompt }
+            },
+            response_format = new
+            {
+                type = "json_schema",
+                json_schema = new
+                {
+                    name = schemaName,
+                    strict = true,
+                    schema
+                }
+            }
+        };
+
+    private object BuildJsonObjectPayload(object schema, string systemPrompt, string userPrompt) =>
+        new
+        {
+            model = _options.ResolveModelId(),
+            max_completion_tokens = _options.MaxOutputTokens,
+            messages = new object[]
+            {
+                new { role = "system", content = BuildJsonObjectSystemPrompt(systemPrompt, schema) },
+                new { role = "user", content = userPrompt }
+            },
+            response_format = new
+            {
+                type = "json_object"
+            }
+        };
+
+    private static string BuildJsonObjectSystemPrompt(string systemPrompt, object schema)
+    {
+        var serializedSchema = JsonSerializer.Serialize(schema, JsonDefaults.SerializerOptions);
+
+        return $$"""
+{{systemPrompt}}
+
+Contraintes supplémentaires :
+- Retourner uniquement un objet JSON valide.
+- Ne jamais retourner de markdown.
+- Le JSON retourné doit respecter strictement ce schéma :
+{{serializedSchema}}
+""";
     }
 }
