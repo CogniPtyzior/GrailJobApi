@@ -60,7 +60,8 @@ public sealed class OpenAiJobSearchAiClient(OpenAiStructuredChatClient client) :
             "Tous les champs textuels retournés doivent être rédigés en français fluide et professionnel. " +
             "Traduisez en français les intitulés et descriptions si la source est en anglais. " +
             "Conservez les noms propres, noms d'entreprise, URLs et sigles techniques si nécessaire. " +
-            "N'écrivez jamais de commentaire méta comme 'Excluded by filtered_company_names'.";
+            "N'écrivez jamais de commentaire méta comme 'Excluded by filtered_company_names'." +
+            "Ne proposer que des entreprises qui ont une offre d'emploi en cours ou une page recrutements pertinente.";
 
         var userPayload = JsonSerializer.Serialize(new
         {
