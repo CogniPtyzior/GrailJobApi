@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /Migration_commands.txt
 /Ai/key.secret
 /appsettings.Development.local.json
+/Smtp/password.secret
