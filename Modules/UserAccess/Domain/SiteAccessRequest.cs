@@ -29,8 +29,8 @@ public sealed class SiteAccessRequest
         return new SiteAccessRequest
         {
             Id = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
+            FirstName = NormalizeIdentityValue(firstName),
+            LastName = NormalizeIdentityValue(lastName),
             CompanyName = companyName,
             ContactEmail = contactEmail,
             JobOffer = jobOffer,
@@ -38,6 +38,12 @@ public sealed class SiteAccessRequest
             NotificationStatus = SiteAccessRequestNotificationStatus.Pending,
             NotificationAttemptCount = 0
         };
+    }
+
+    public void UpdateIdentity(string? firstName, string? lastName)
+    {
+        FirstName = NormalizeIdentityValue(firstName);
+        LastName = NormalizeIdentityValue(lastName);
     }
 
     public void MarkNotificationAttempt()
@@ -57,6 +63,9 @@ public sealed class SiteAccessRequest
         NotificationStatus = SiteAccessRequestNotificationStatus.Failed;
         NotificationLastError = error;
     }
+
+    private static string NormalizeIdentityValue(string? value)
+        => value?.Trim() ?? string.Empty;
 }
 
 public enum SiteAccessRequestNotificationStatus

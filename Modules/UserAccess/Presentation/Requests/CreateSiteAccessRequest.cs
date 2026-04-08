@@ -2,11 +2,9 @@ namespace GrailJobApi.Modules.UserAccess.Presentation.Requests;
 
 public sealed class CreateSiteAccessRequest
 {
-    [Required]
     [StringLength(100)]
     public string FirstName { get; init; } = string.Empty;
 
-    [Required]
     [StringLength(100)]
     public string LastName { get; init; } = string.Empty;
 

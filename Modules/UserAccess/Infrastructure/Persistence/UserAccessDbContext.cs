@@ -19,6 +19,8 @@ public sealed class UserAccessDbContext(DbContextOptions<UserAccessDbContext> op
         builder.Entity<User>(entity =>
         {
             entity.ToTable("Users");
+            entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.Email).HasMaxLength(320);
             entity.Property(x => x.UserName).HasMaxLength(320);
             entity.Property(x => x.NormalizedEmail).HasMaxLength(320);

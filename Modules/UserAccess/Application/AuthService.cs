@@ -32,6 +32,6 @@ public sealed class AuthService(UserManager<User> userManager, SignInManager<Use
     public async Task<LoginResponse?> GetCurrentAsync(ClaimsPrincipal principal)
     {
         var user = await userManager.GetUserAsync(principal);
-        return user is null ? null : LoginResponse.From(user);
+        return user is null || !user.IsActive ? null : LoginResponse.From(user);
     }
 }

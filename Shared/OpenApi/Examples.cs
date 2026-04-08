@@ -23,7 +23,13 @@ public sealed class LoginResponseExample : IExamplesProvider<LoginResponse>
     public LoginResponse GetExamples() => new(new UserResponse(
         "8a4d6d1a-6fef-4b6c-ae47-c7e6d9301e41",
         "test@grailjob.local",
-        "test"));
+        "Test User",
+        "Test",
+        "User",
+        true,
+        DateTime.Parse("2026-04-03T09:00:00Z"),
+        DateTime.Parse("2026-04-08T08:30:00Z"),
+        true));
 }
 
 public sealed class LogoutResponseExample : IExamplesProvider<LogoutResponse>

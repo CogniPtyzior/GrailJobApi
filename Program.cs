@@ -15,6 +15,7 @@ using GrailJobApi.Shared.Configuration;
 using GrailJobApi.Shared.OpenApi;
 using GrailJobApi.Shared.Persistence;
 using GrailJobApi.Shared.Seeding;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -115,6 +116,7 @@ builder.Services.AddHttpClient<OpenAiStructuredChatClient>(client =>
 });
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AdminUserAccessService>();
 builder.Services.AddScoped<CandidateProfileService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<CompanyWorkspaceService>();
