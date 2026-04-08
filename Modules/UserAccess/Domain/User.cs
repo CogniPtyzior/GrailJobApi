@@ -11,6 +11,9 @@ public sealed class User : IdentityUser<Guid>
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
     public DateTime? LastLoginAtUtc { get; private set; }
+    public DateTime? PasswordUpdatedAtUtc { get; private set; }
+    public DateTime? PasswordResetLinkSentAtUtc { get; private set; }
+    public bool? PasswordResetLinkLastSendSucceeded { get; private set; }
 
     private User()
     {
@@ -77,6 +80,17 @@ public sealed class User : IdentityUser<Guid>
     public void MarkLogin(DateTime nowUtc)
     {
         LastLoginAtUtc = nowUtc;
+    }
+
+    public void MarkPasswordUpdated(DateTime nowUtc)
+    {
+        PasswordUpdatedAtUtc = nowUtc;
+    }
+
+    public void MarkPasswordResetLinkDispatch(DateTime nowUtc, bool succeeded)
+    {
+        PasswordResetLinkSentAtUtc = nowUtc;
+        PasswordResetLinkLastSendSucceeded = succeeded;
     }
 
     private static string NormalizeIdentityValue(string? value)

@@ -70,6 +70,35 @@ public sealed class AdminUserAccessController(
         }
     }
 
+    [HttpPost("users/{id:guid}/password-reset-link")]
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserResponse>> SendPasswordResetLink(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var adminCheck = await EnsureAdminAsync();
+        if (adminCheck is not null)
+        {
+            return adminCheck;
+        }
+
+        try
+        {
+            var response = await service.SendPasswordResetLinkAsync(id, cancellationToken);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status404NotFound });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status400BadRequest });
+        }
+    }
+
     [HttpPatch("users/{id:guid}/status")]
     [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

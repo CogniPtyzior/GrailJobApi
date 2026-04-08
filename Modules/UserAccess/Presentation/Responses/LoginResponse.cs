@@ -17,7 +17,10 @@ public sealed record UserResponse(
     bool IsActive,
     DateTime CreatedAtUtc,
     DateTime? LastLoginAtUtc,
-    bool HasPassword)
+    bool HasPassword,
+    DateTime? PasswordUpdatedAtUtc,
+    DateTime? PasswordResetLinkSentAtUtc,
+    bool? PasswordResetLinkLastSendSucceeded)
 {
     public static UserResponse From(User user)
         => new(
@@ -29,7 +32,10 @@ public sealed record UserResponse(
             user.IsActive,
             user.CreatedAtUtc,
             user.LastLoginAtUtc,
-            !string.IsNullOrWhiteSpace(user.PasswordHash));
+            !string.IsNullOrWhiteSpace(user.PasswordHash),
+            user.PasswordUpdatedAtUtc,
+            user.PasswordResetLinkSentAtUtc,
+            user.PasswordResetLinkLastSendSucceeded);
 }
 
 public sealed record LogoutResponse(bool Success);

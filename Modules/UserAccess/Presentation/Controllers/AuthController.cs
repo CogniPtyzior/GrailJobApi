@@ -11,7 +11,7 @@ namespace GrailJobApi.Modules.UserAccess.Presentation.Controllers;
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json", "application/problem+json")]
-public sealed class AuthController(AuthService authService) : ControllerBase
+public sealed class AuthController(AuthService authService, PasswordSetupService passwordSetupService) : ControllerBase
 {
     /// <summary>Authenticates a user and creates the authentication cookie.</summary>
     [HttpPost("login")]
@@ -51,5 +51,35 @@ public sealed class AuthController(AuthService authService) : ControllerBase
         return response is null
             ? Unauthorized(new ProblemDetails { Title = "The current user is not authenticated.", Status = StatusCodes.Status401Unauthorized })
             : Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("password-setup")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<object>> CompletePasswordSetup(
+        [FromBody] CompletePasswordSetupRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await passwordSetupService.CompleteAsync(
+                request.UserId,
+                request.Token,
+                request.Password,
+                request.ConfirmPassword,
+                cancellationToken);
+
+            return Ok(new { success = true });
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status404NotFound });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status400BadRequest });
+        }
     }
 }

@@ -13,4 +13,9 @@ public sealed class SiteAccessEmailOptions
     public string SmtpPassword { get; init; } = string.Empty;
     public string SmtpPasswordFile { get; init; } = string.Empty;
     public bool UseStartTls { get; init; } = true;
+    public string WebsiteUrl { get; init; } = string.Empty;
+    public string LinkedInUrl { get; init; } = string.Empty;
+    public string BrandLogoImageUrl { get; init; } = string.Empty;
+    public string ProfileImageUrl { get; init; } = string.Empty;
+    public string PasswordSetupUrlBase { get; init; } = string.Empty;
 }

@@ -7,7 +7,9 @@ namespace GrailJobApi.Modules.UserAccess.Application;
 
 public sealed class AdminUserAccessService(
     UserManager<User> userManager,
-    UserAccessDbContext dbContext)
+    UserAccessDbContext dbContext,
+    IPasswordSetupEmailSender passwordSetupEmailSender,
+    ILogger<AdminUserAccessService> logger)
 {
     private const int MaxPageSize = 15;
 
@@ -127,6 +129,26 @@ public sealed class AdminUserAccessService(
         var addPasswordResult = await userManager.AddPasswordAsync(user, password);
         EnsureSucceeded(addPasswordResult, "Impossible de définir le mot de passe.");
 
+        user.MarkPasswordUpdated(DateTime.UtcNow);
+        dbContext.Users.Update(user);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var refreshedUser = await dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == userId, cancellationToken);
+        return UserResponse.From(refreshedUser);
+    }
+
+    public async Task<UserResponse> SendPasswordResetLinkAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await FindUserAsync(userId, cancellationToken);
+        if (!user.IsActive)
+        {
+            throw new InvalidOperationException("Le lien de réinitialisation ne peut être envoyé qu'à un compte actif.");
+        }
+
+        await TrySendPasswordSetupEmailAsync(user, cancellationToken);
+
         var refreshedUser = await dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == userId, cancellationToken);
         return UserResponse.From(refreshedUser);
     }
@@ -194,6 +216,7 @@ public sealed class AdminUserAccessService(
             cancellationToken);
 
         User user;
+        var shouldSendPasswordSetupEmail = false;
 
         if (existingUser is null)
         {
@@ -201,15 +224,31 @@ public sealed class AdminUserAccessService(
 
             var createResult = await userManager.CreateAsync(user);
             EnsureSucceeded(createResult, "Impossible de créer l'utilisateur.");
+
+            shouldSendPasswordSetupEmail = true;
         }
         else
         {
             user = existingUser;
-            user.Activate();
             user.UpdateIdentity(request.FirstName, request.LastName, onlyWhenProvided: true);
+
+            if (!user.IsActive)
+            {
+                user.Activate();
+                shouldSendPasswordSetupEmail = true;
+            }
+            else if (string.IsNullOrWhiteSpace(user.PasswordHash))
+            {
+                shouldSendPasswordSetupEmail = true;
+            }
 
             var updateResult = await userManager.UpdateAsync(user);
             EnsureSucceeded(updateResult, "Impossible de réactiver l'utilisateur.");
+        }
+
+        if (shouldSendPasswordSetupEmail)
+        {
+            await TrySendPasswordSetupEmailAsync(user, cancellationToken);
         }
 
         var requestsToDelete = await dbContext.SiteAccessRequests
@@ -249,6 +288,38 @@ public sealed class AdminUserAccessService(
     private static int ClampPageSize(int pageSize)
         => pageSize <= 0 ? MaxPageSize : Math.Min(pageSize, MaxPageSize);
 
+    private async Task<bool> TrySendPasswordSetupEmailAsync(
+        User user,
+        CancellationToken cancellationToken)
+    {
+        var attemptedAtUtc = DateTime.UtcNow;
+
+        try
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var passwordSetupLink = BuildPasswordSetupLink(user.Id, token);
+            await passwordSetupEmailSender.SendAsync(user, passwordSetupLink, cancellationToken);
+
+            user.MarkPasswordResetLinkDispatch(attemptedAtUtc, succeeded: true);
+            dbContext.Users.Update(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            user.MarkPasswordResetLinkDispatch(attemptedAtUtc, succeeded: false);
+            dbContext.Users.Update(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogError(
+                exception,
+                "Échec de l'envoi du lien de définition du mot de passe pour l'utilisateur {UserId}.",
+                user.Id);
+
+            return false;
+        }
+    }
+
     private static void EnsureSucceeded(IdentityResult result, string defaultMessage)
     {
         if (result.Succeeded)
@@ -258,5 +329,13 @@ public sealed class AdminUserAccessService(
 
         var message = result.Errors.Select(x => x.Description).FirstOrDefault();
         throw new InvalidOperationException(message ?? defaultMessage);
+    }
+
+    private string BuildPasswordSetupLink(Guid userId, string token)
+    {
+        var baseUrl = passwordSetupEmailSender.PasswordSetupUrlBase.Trim();
+        var separator = baseUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+
+        return $"{baseUrl}{separator}userId={Uri.EscapeDataString(userId.ToString())}&token={Uri.EscapeDataString(token)}";
     }
 }

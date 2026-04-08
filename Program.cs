@@ -121,12 +121,14 @@ builder.Services.AddScoped<CandidateProfileService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<CompanyWorkspaceService>();
 builder.Services.AddScoped<SiteAccessRequestService>();
+builder.Services.AddScoped<PasswordSetupService>();
 
 builder.Services.AddScoped<ICandidateProfileRepository, CandidateProfileRepository>();
 builder.Services.AddScoped<ISearchSessionRepository, SearchSessionRepository>();
 builder.Services.AddScoped<IJobOpportunityRepository, JobOpportunityRepository>();
 builder.Services.AddScoped<ISiteAccessRequestRepository, SiteAccessRequestRepository>();
 builder.Services.AddScoped<ISiteAccessRequestEmailSender, MailKitSiteAccessRequestEmailSender>();
+builder.Services.AddScoped<IPasswordSetupEmailSender, MailKitPasswordSetupEmailSender>();
 builder.Services.AddScoped<IPdfTextExtractor, PdfPigTextExtractor>();
 builder.Services.AddScoped<ICandidateProfileAiEnricher, OpenAiCandidateProfileAiEnricher>();
 builder.Services.AddScoped<IJobSearchAiClient, OpenAiJobSearchAiClient>();

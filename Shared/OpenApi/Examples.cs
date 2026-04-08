@@ -29,6 +29,9 @@ public sealed class LoginResponseExample : IExamplesProvider<LoginResponse>
         true,
         DateTime.Parse("2026-04-03T09:00:00Z"),
         DateTime.Parse("2026-04-08T08:30:00Z"),
+        true,
+        DateTime.Parse("2026-04-08T08:35:00Z"),
+        DateTime.Parse("2026-04-08T08:40:00Z"),
         true));
 }
 

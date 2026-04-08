@@ -7,46 +7,55 @@ using MimeKit;
 
 namespace GrailJobApi.Modules.UserAccess.Infrastructure.Email;
 
-public sealed class MailKitSiteAccessRequestEmailSender(
-    IOptions<SiteAccessEmailOptions> options) : ISiteAccessRequestEmailSender
+public sealed class MailKitPasswordSetupEmailSender(
+    IOptions<SiteAccessEmailOptions> options) : IPasswordSetupEmailSender
 {
     private readonly SiteAccessEmailOptions _options = options.Value;
 
-    public async Task SendAsync(SiteAccessRequest request, CancellationToken cancellationToken = default)
+    public string PasswordSetupUrlBase => _options.PasswordSetupUrlBase;
+
+    public async Task SendAsync(User user, string passwordSetupLink, CancellationToken cancellationToken = default)
     {
         ValidateOptions();
 
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            throw new InvalidOperationException("Impossible d'envoyer le mail de définition du mot de passe sans adresse email utilisateur.");
+        }
+
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_options.FromName, _options.FromEmail));
-        message.To.Add(MailboxAddress.Parse(_options.RecipientEmail));
-        message.Subject = $"Nouvelle demande d'accès - {request.CompanyName} - {request.FirstName} {request.LastName}";
+        message.To.Add(MailboxAddress.Parse(user.Email));
+        message.Subject = "Accès GrailJob validé - définissez votre mot de passe";
+
+        var displayName = user.GetDisplayName();
 
         var body = new BodyBuilder
         {
             TextBody =
 $"""
-Une nouvelle demande d'accès a été reçue.
+Bonjour {displayName},
 
-Prénom : {request.FirstName}
-Nom : {request.LastName}
-Entreprise concernée : {request.CompanyName}
-Email de contact : {request.ContactEmail}
-Date UTC : {request.CreatedAtUtc:O}
+Votre accès GrailJob est maintenant actif.
 
-Offre d'emploi :
-{request.JobOffer}
+Pour définir ou mettre à jour votre mot de passe, utilisez ce lien :
+{passwordSetupLink}
+
+Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.
 """,
             HtmlBody = GrailJobEmailLayoutBuilder.BuildHtmlDocument(
                 _options,
-                "Nouvelle demande d'accès",
+                "Définissez votre mot de passe",
                 $"""
-<p style="margin:0 0 12px 0;"><strong>Prénom :</strong> {GrailJobEmailLayoutBuilder.HtmlEncode(request.FirstName)}</p>
-<p style="margin:0 0 12px 0;"><strong>Nom :</strong> {GrailJobEmailLayoutBuilder.HtmlEncode(request.LastName)}</p>
-<p style="margin:0 0 12px 0;"><strong>Entreprise concernée :</strong> {GrailJobEmailLayoutBuilder.HtmlEncode(request.CompanyName)}</p>
-<p style="margin:0 0 12px 0;"><strong>Email de contact :</strong> {GrailJobEmailLayoutBuilder.HtmlEncode(request.ContactEmail)}</p>
-<p style="margin:0 0 12px 0;"><strong>Date UTC :</strong> {request.CreatedAtUtc:O}</p>
-<p style="margin:0 0 12px 0;"><strong>Offre d'emploi :</strong></p>
-<pre style="margin:0;white-space:pre-wrap;font-family:inherit;background:#f7f1ec;border:1px solid #eaded6;border-radius:12px;padding:16px;">{GrailJobEmailLayoutBuilder.HtmlEncode(request.JobOffer)}</pre>
+<p style="margin:0 0 16px 0;">Bonjour {GrailJobEmailLayoutBuilder.HtmlEncode(displayName)},</p>
+<p style="margin:0 0 16px 0;">Votre accès GrailJob est maintenant actif.</p>
+<p style="margin:0 0 20px 0;">Pour définir ou mettre à jour votre mot de passe en toute sécurité, utilisez le lien ci-dessous :</p>
+<p style="margin:0 0 20px 0;">
+  <a href="{GrailJobEmailLayoutBuilder.HtmlEncode(passwordSetupLink)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:12px 18px;background:#b7815f;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;">
+    Définir mon mot de passe
+  </a>
+</p>
+<p style="margin:0;color:#6f625c;">Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.</p>
 """)
         };
 
@@ -93,11 +102,6 @@ Offre d'emploi :
 
     private void ValidateOptions()
     {
-        if (string.IsNullOrWhiteSpace(_options.RecipientEmail))
-        {
-            throw new InvalidOperationException("La configuration SiteAccessEmail:RecipientEmail est obligatoire.");
-        }
-
         if (string.IsNullOrWhiteSpace(_options.FromEmail))
         {
             throw new InvalidOperationException("La configuration SiteAccessEmail:FromEmail est obligatoire.");
@@ -111,6 +115,11 @@ Offre d'emploi :
         if (_options.SmtpPort <= 0)
         {
             throw new InvalidOperationException("La configuration SiteAccessEmail:SmtpPort est invalide.");
+        }
+
+        if (string.IsNullOrWhiteSpace(_options.PasswordSetupUrlBase))
+        {
+            throw new InvalidOperationException("La configuration SiteAccessEmail:PasswordSetupUrlBase est obligatoire.");
         }
 
         GrailJobEmailLayoutBuilder.ValidateBrandingOptions(_options);
