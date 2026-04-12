@@ -10,14 +10,6 @@ public static class DatabaseConnectionStringBuilder
         var options = configuration.GetSection(DbOptions.SectionName).Get<DbOptions>() ?? new DbOptions();
         var password = ResolvePassword(options);
 
-        Console.WriteLine($"[DB DEBUG] CurrentDirectory = {Directory.GetCurrentDirectory()}");
-        Console.WriteLine($"[DB DEBUG] Host = '{options.Host}'");
-        Console.WriteLine($"[DB DEBUG] Port = '{options.Port}'");
-        Console.WriteLine($"[DB DEBUG] Database = '{options.Database}'");
-        Console.WriteLine($"[DB DEBUG] Username = '{options.Username}'");
-        Console.WriteLine($"[DB DEBUG] PasswordFile = '{options.PasswordFile}'");
-        Console.WriteLine($"[DB DEBUG] PasswordFile.Exists = '{(!string.IsNullOrWhiteSpace(options.PasswordFile) && File.Exists(options.PasswordFile))}'");
-
         var builder = new NpgsqlConnectionStringBuilder
         {
             Host = options.Host,
@@ -27,11 +19,6 @@ public static class DatabaseConnectionStringBuilder
             Password = options.ResolvePassword(),
             IncludeErrorDetail = true
         };
-
-        Console.WriteLine($"[DB DEBUG] Final Host = '{builder.Host}'");
-        Console.WriteLine($"[DB DEBUG] Final Port = '{builder.Port}'");
-        Console.WriteLine($"[DB DEBUG] Final Database = '{builder.Database}'");
-        Console.WriteLine($"[DB DEBUG] Final Username = '{builder.Username}'");
 
         return builder.ConnectionString;
     }
