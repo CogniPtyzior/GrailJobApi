@@ -30,6 +30,7 @@
 
 	<ItemGroup>
 		<Folder Include="Ai\" />
+		<Folder Include="Controllers\" />
 		<Folder Include="Smtp\" />
 	</ItemGroup>
 

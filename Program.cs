@@ -140,17 +140,17 @@ if (app.Environment.IsDevelopment())
 {
     await MigrationRunner.ApplyMigrationsAsync(app.Services);
 
-    using (var scope = app.Services.CreateScope())
-    {
-        await scope.ServiceProvider.GetRequiredService<DevelopmentDataSeeder>().SeedAsync();
-    }
-
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "GrailJob API v1");
         options.DocumentTitle = "GrailJob API";
     });
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<DevelopmentDataSeeder>().SeedAsync();
 }
 
 app.UseExceptionHandler();
