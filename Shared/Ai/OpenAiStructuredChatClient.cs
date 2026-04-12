@@ -4,22 +4,31 @@ using Microsoft.Extensions.Options;
 
 namespace GrailJobApi.Shared.Ai;
 
-public sealed class OpenAiStructuredChatClient(HttpClient httpClient, IOptions<OpenAiOptions> options)
+public sealed class OpenAiStructuredChatClient
 {
-    private readonly OpenAiOptions _options = options.Value;
+    private readonly HttpClient _httpClient;
+    private readonly OpenAiOptions _options;
+    private readonly string _apiKey;
 
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
+    public OpenAiStructuredChatClient(HttpClient httpClient, IOptions<OpenAiOptions> options)
+    {
+        _httpClient = httpClient;
+        _options = options.Value;
+        _apiKey = _options.ResolveApiKey();
+    }
+
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
     public bool UseMockFallback => _options.UseMockWhenApiKeyMissing;
 
     public async Task<T> GetStructuredResponseAsync<T>(string schemaName, object schema, string systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
     {
         if (!IsConfigured)
         {
-            throw new InvalidOperationException("OpenAI is not configured. Provide an API key or enable the mock fallback in development.");
+            throw new InvalidOperationException("OpenAI is not configured. Provide OpenAi:ApiKeyFile or enable the mock fallback in development.");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.BaseUrl.TrimEnd('/')}/chat/completions");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
 
         var payload = BuildPayload(schemaName, schema, systemPrompt, userPrompt);
 
@@ -28,7 +37,7 @@ public sealed class OpenAiStructuredChatClient(HttpClient httpClient, IOptions<O
             Encoding.UTF8,
             "application/json");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
