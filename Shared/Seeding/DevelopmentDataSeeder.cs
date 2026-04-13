@@ -24,8 +24,8 @@ public sealed class DevelopmentDataSeeder(
             return;
         }
 
-        var admin = await EnsureUserAsync(_options.AdminEmail, _options.AdminPassword, cancellationToken);
-        var testUser = await EnsureUserAsync(_options.TestEmail, _options.TestPassword, cancellationToken);
+        var admin = await EnsureUserAsync(_options.AdminEmail, _options.ResolveAdminPassword(), cancellationToken);
+        var testUser = await EnsureUserAsync(_options.TestEmail, _options.ResolveTestPassword(), cancellationToken);
 
         if (!_options.EnableDemoData)
         {
