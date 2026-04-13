@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /Ai/key.secret
 /appsettings.Development.local.json
 /Smtp/password.secret
+/Credentials/password.secret
